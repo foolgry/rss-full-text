@@ -1,0 +1,5 @@
+feedgen==0.9.0
+feedparser==6.0.10
+lmdb==1.4.1
+readabilipy==0.2.0
+Requests==2.29.0
