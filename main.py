@@ -5,6 +5,9 @@ import requests
 import lmdb
 import json
 import os
+import schedule
+import time
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 env = lmdb.open("./data", map_size=1024 * 1024 * 1024 * 2)
 
@@ -73,21 +76,33 @@ def get_rss_source():
     return rss_sources
 
 
-def gen_full_rss_list(rss_sources):
-    for feed_url in rss_sources:
-        gen_one_full_rss(feed_url)
-
-
-def gen_full_rss():
-    rss_sources = get_rss_source()
-    gen_full_rss_list(rss_sources)
-
-
 # 按间距中的绿色按钮以运行脚本。
+
+
+def job():
+    gen_full_rss()
+
+
+
+class RSSRequestHandler(SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory="./rss", **kwargs)
+
+import threading
+
 if __name__ == '__main__':
     # set workdir to project root
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    gen_full_rss()
+    server_address = ('', 8080)
+    httpd = HTTPServer(server_address, RSSRequestHandler)
+    httpd_thread = threading.Thread(target=httpd.serve_forever)
+    httpd_thread.start()
+
+    schedule.every(2).hours.do(job)
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
 
 # 访问 https://www.jetbrains.com/help/pycharm/ 获取 PyCharm 帮助
 
